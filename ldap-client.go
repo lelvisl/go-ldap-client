@@ -158,3 +158,86 @@ func (lc *LDAPClient) GetGroupsOfUser(username string) ([]string, error) {
 	}
 	return groups, nil
 }
+
+
+
+// GetGroupsOfUserAD returns the groups for a ActiveDirectory user
+func (lc *LDAPClient) GetGroupsOfUserAD(username string) ([]string, error) {
+	err := lc.Connect()
+	if err != nil {
+		return nil, err
+	}
+
+	searchRequest := ldap.NewSearchRequest(
+		lc.Base,
+		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		fmt.Sprintf(lc.GroupFilter, username),
+		[]string{"memberOf"},
+		nil,
+	)
+	sr, err := lc.Conn.Search(searchRequest)
+	if err != nil {
+		return nil, err
+	}
+	groups := []string{}
+
+	//	return groups, sr.Entries, nil
+
+	regexCN := regexp.MustCompile(`CN=(.*?),`)
+	for _, x := range sr.Entries {
+		for _, y := range x.Attributes {
+			if y.Name == "memberOf" {
+				for _, z := range y.Values {
+					group := regexCN.FindStringSubmatch(z)[1]
+					groups = append(groups, group)
+				}
+			}
+		}
+	}
+	return groups, nil
+}
+
+
+func (lc *LDAPClient) GetCNUserAD(username string) (string, error) {
+	err := lc.Connect()
+	if err != nil {
+		return "", err
+	}
+
+	// First bind with a read only user
+	if lc.BindDN != "" && lc.BindPassword != "" {
+		err := lc.Conn.Bind(lc.BindDN, lc.BindPassword)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	attributes := append(lc.Attributes, "dn")
+	// Search for the given username
+	searchRequest := ldap.NewSearchRequest(
+		lc.Base,
+		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		fmt.Sprintf(lc.UserFilter, username),
+		attributes,
+		nil,
+	)
+
+	sr, err := lc.Conn.Search(searchRequest)
+	if err != nil {
+		return "", err
+	}
+
+	if len(sr.Entries) < 1 {
+		return "", errors.New("User does not exist")
+	}
+
+	if len(sr.Entries) > 1 {
+		return "", errors.New("Too many entries returned")
+	}
+
+	userDN := sr.Entries[0].DN
+	regexCN := regexp.MustCompile(`CN=(.*?),`)
+	CN := regexCN.FindStringSubmatch(userDN)[1]
+	return CN, nil
+
+}
