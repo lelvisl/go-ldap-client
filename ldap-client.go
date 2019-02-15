@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+
+	ldap "gopkg.in/ldap.v2"
 )
 
 type LDAPClient struct {
