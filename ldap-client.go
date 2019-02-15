@@ -62,11 +62,12 @@ func (lc *LDAPClient) Connect() error {
 		}
 
 		lc.Conn = l
+		err = lc.Conn.Bind(lc.BindDN, lc.BindPassword)
+		if err != nil {
+			return fmt.Errorf("cannot bind to ldap. Reason %s", err)
+		}
 	}
-	err := lc.Conn.Bind(lc.BindDN, lc.BindPassword)
-	if err != nil {
-		return fmt.Errorf("cannot bind to ldap. Reason %s", err)
-	}
+
 	return nil
 }
 
