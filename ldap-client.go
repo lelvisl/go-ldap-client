@@ -7,8 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-
-	"gopkg.in/ldap.v2"
 )
 
 type LDAPClient struct {
@@ -62,6 +60,10 @@ func (lc *LDAPClient) Connect() error {
 		}
 
 		lc.Conn = l
+	}
+	err = lc.Conn.Bind(lc.BindDN, lc.BindPassword)
+	if err != nil {
+		return fmt.Errorf("cannot bind to ldap. Reason %s", err)
 	}
 	return nil
 }
@@ -160,9 +162,6 @@ func (lc *LDAPClient) GetGroupsOfUser(username string) ([]string, error) {
 	return groups, nil
 }
 
-
-
-
 // GetGroupsOfUserAD returns the groups for a ActiveDirectory user
 func (lc *LDAPClient) GetGroupsOfUserAD(username string) ([]string, error) {
 	err := lc.Connect()
@@ -198,7 +197,6 @@ func (lc *LDAPClient) GetGroupsOfUserAD(username string) ([]string, error) {
 	}
 	return groups, nil
 }
-
 
 func (lc *LDAPClient) GetCNUserAD(username string) (string, error) {
 	err := lc.Connect()
