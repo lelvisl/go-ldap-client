@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"regexp"
 
 	"gopkg.in/ldap.v2"
 )
@@ -158,6 +159,7 @@ func (lc *LDAPClient) GetGroupsOfUser(username string) ([]string, error) {
 	}
 	return groups, nil
 }
+
 
 
 
